@@ -4,6 +4,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import api from '../../services/api';
+import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const paymentMethods = [
   { value: 'cash', label: 'Cash' },
@@ -13,8 +14,7 @@ const paymentMethods = [
 ];
 
 export default function PaymentModal({ open, onClose, total, customerId, onComplete }) {
-  const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState('cash');
+  const [payments, setPayments] = useState([{ method: 'cash', amount: '' }]);
   const [processing, setProcessing] = useState(false);
   const [usePoints, setUsePoints] = useState(false);
   const [redeemPoints, setRedeemPoints] = useState('');
@@ -37,34 +37,61 @@ export default function PaymentModal({ open, onClose, total, customerId, onCompl
     }
   }, [open, customerId]);
 
-  const change = Number(amount) - total;
+  useEffect(() => {
+    if (open) setPayments([{ method: 'cash', amount: '' }]);
+  }, [open]);
+
   const pointsDiscount = usePoints ? Math.min(Number(redeemPoints) || 0, maxDiscount, total) : 0;
   const effectiveTotal = total - pointsDiscount;
+  const allocated = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const remaining = Math.max(0, effectiveTotal - allocated);
+  const overpaid = Math.max(0, allocated - effectiveTotal);
+
+  const updatePayment = (idx, field, value) => {
+    setPayments((prev) => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: value };
+      return updated;
+    });
+  };
+
+  const addPayment = () => {
+    setPayments((prev) => [...prev, { method: 'cash', amount: '' }]);
+  };
+
+  const removePayment = (idx) => {
+    setPayments((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   const handleSubmit = async () => {
     setProcessing(true);
     try {
+      const finalPayments = payments.map(p => ({
+        method: p.method,
+        amount: Number(p.amount) || remaining > 0 ? Number(p.amount) || 0 : 0,
+      }));
+      if (finalPayments.length === 0) {
+        finalPayments.push({ method: 'cash', amount: effectiveTotal });
+      }
       await onComplete({
-        method,
-        amount: Number(amount) || effectiveTotal,
-        change: change > 0 ? change : 0,
+        payments: finalPayments,
         redeemPoints: pointsDiscount,
       });
     } finally {
       setProcessing(false);
-      setAmount('');
-      setUsePoints(false);
-      setRedeemPoints('');
     }
   };
 
   const getQuickAmounts = () => {
+    if (payments.length !== 1 || payments[0].method !== 'cash') return [];
     const base = Math.ceil(effectiveTotal / 10) * 10;
     return [base, base + 10, base + 20, base + 50, base + 100].filter(a => a > effectiveTotal);
   };
 
+  const canComplete = allocated >= effectiveTotal || payments.some(p => Number(p.amount) > 0);
+
   return (
-    <Modal open={open} onClose={onClose} title="Payment" size="sm">
+    <Modal open={open} onClose={onClose} title="Payment" size="md">
       <div className="space-y-4">
         <div className="text-center">
           <div className="text-sm text-gray-500">Total Amount</div>
@@ -73,8 +100,6 @@ export default function PaymentModal({ open, onClose, total, customerId, onCompl
             <div className="text-xs text-green-600 mt-1">Includes -{new Intl.NumberFormat().format(pointsDiscount)} points discount</div>
           )}
         </div>
-
-        <Select label="Payment Method" value={method} onChange={setMethod} options={paymentMethods} />
 
         {customerId && pointsBalance > 0 && (
           <div className="border rounded-lg p-3">
@@ -98,32 +123,69 @@ export default function PaymentModal({ open, onClose, total, customerId, onCompl
           </div>
         )}
 
-        {method === 'cash' && (
-          <>
-            <Input label="Amount Received" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Enter amount" />
-            {Number(amount) > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {getQuickAmounts().map(a => (
-                  <button key={a} onClick={() => setAmount(String(a))} className="px-3 py-1 text-xs border rounded hover:bg-gray-100">{a}</button>
-                ))}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700">Payments</label>
+            <button onClick={addPayment} className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+              <PlusIcon className="w-3 h-3" /> Add payment
+            </button>
+          </div>
+          {payments.map((p, idx) => (
+            <div key={idx} className="flex gap-2 items-start">
+              <div className="flex-1">
+                <Select
+                  value={p.method}
+                  onChange={(v) => updatePayment(idx, 'method', v)}
+                  options={paymentMethods}
+                />
               </div>
-            )}
-            {Number(amount) >= effectiveTotal && (
-              <div className="text-center">
-                <span className="text-sm text-gray-500">Change: </span>
-                <span className="text-xl font-bold text-green-600">{new Intl.NumberFormat().format(Number(amount) - effectiveTotal)}</span>
+              <div className="flex-1">
+                <input
+                  type="number"
+                  value={p.amount}
+                  onChange={(e) => updatePayment(idx, 'amount', e.target.value)}
+                  placeholder="Amount"
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                  min="0"
+                />
+              </div>
+              {payments.length > 1 && (
+                <button onClick={() => removePayment(idx)} className="p-2 text-red-400 hover:text-red-600 mt-1">
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium">Remaining:</span>
+          <span className={remaining > 0 ? 'text-orange-600 font-bold' : 'text-green-600 font-bold'}>
+            {remaining > 0 ? new Intl.NumberFormat().format(remaining) : 'Paid in full'}
+          </span>
+        </div>
+
+        {overpaid > 0 && (
+          <div className="text-center text-sm text-green-700">
+            Change: <span className="font-bold">{new Intl.NumberFormat().format(overpaid)}</span>
+          </div>
+        )}
+
+        {payments.length === 1 && payments[0].method === 'cash' && (
+          <>
+            {quickAmounts.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {quickAmounts.map(a => (
+                  <button key={a} onClick={() => updatePayment(0, 'amount', String(a))} className="px-3 py-1 text-xs border rounded hover:bg-gray-100">{a}</button>
+                ))}
               </div>
             )}
           </>
         )}
 
-        {method !== 'cash' && (
-          <Input label="Amount" type="number" value={amount || effectiveTotal} onChange={(e) => setAmount(e.target.value)} />
-        )}
-
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={handleSubmit} disabled={processing || (method === 'cash' && Number(amount) < effectiveTotal)}>
+          <Button className="flex-1" onClick={handleSubmit} disabled={processing || (allocated < effectiveTotal && !payments.some(p => Number(p.amount) > 0))}>
             {processing ? 'Processing...' : 'Complete Payment'}
           </Button>
         </div>

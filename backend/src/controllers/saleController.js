@@ -51,6 +51,7 @@ exports.create = async (req, res) => {
     notes: req.body.notes,
     session_id,
     redeem_points: req.body.redeem_points,
+    order_discount: req.body.order_discount,
   });
   res.status(201).json(sale);
 };

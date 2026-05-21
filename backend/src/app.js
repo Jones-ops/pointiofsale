@@ -116,6 +116,8 @@ async function main() {
 
   if (!(await columnExists('sales', 'session_id'))) await db.run("ALTER TABLE sales ADD COLUMN session_id INTEGER REFERENCES pos_sessions(id)");
   if (!(await columnExists('sales', 'parent_sale_id'))) await db.run("ALTER TABLE sales ADD COLUMN parent_sale_id INTEGER REFERENCES sales(id)");
+  if (!(await columnExists('sales', 'order_discount_type'))) await db.run("ALTER TABLE sales ADD COLUMN order_discount_type TEXT");
+  if (!(await columnExists('sales', 'order_discount_value'))) await db.run("ALTER TABLE sales ADD COLUMN order_discount_value REAL DEFAULT 0");
   if (!(await columnExists('sale_items', 'return_reason'))) await db.run("ALTER TABLE sale_items ADD COLUMN return_reason TEXT");
   if (!(await columnExists('customers', 'pricelist_id'))) await db.run("ALTER TABLE customers ADD COLUMN pricelist_id INTEGER REFERENCES pricelists(id)");
   if (!(await columnExists('customers', 'loyalty_points'))) await db.run("ALTER TABLE customers ADD COLUMN loyalty_points REAL DEFAULT 0");

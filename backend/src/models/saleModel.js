@@ -45,7 +45,7 @@ const saleModel = {
     return sale ? saleModel.findById(sale.id) : null;
   },
 
-  async create({ customer_id, staff_id, items, payments: pments, notes, session_id, redeem_points }) {
+  async create({ customer_id, staff_id, items, payments: pments, notes, session_id, redeem_points, order_discount }) {
     const session_id_val = session_id || null;
     const receiptNo = `RCP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
@@ -71,17 +71,32 @@ const saleModel = {
 
     const settings = await db.one('SELECT * FROM settings WHERE id = 1');
     const taxRate = settings ? settings.tax_rate : 0;
-    const taxableAmount = subtotal - totalDiscount;
-    const taxAmount = taxableAmount * (taxRate / 100);
-    const totalAmount = taxableAmount + taxAmount;
+    const afterLineDiscount = subtotal - totalDiscount;
+
+    let orderDiscountType = null;
+    let orderDiscountValue = 0;
+    let orderDiscountAmount = 0;
+    if (order_discount && Number(order_discount.value) > 0) {
+      orderDiscountType = order_discount.type === 'percent' ? 'percent' : 'fixed';
+      orderDiscountValue = Number(order_discount.value);
+      orderDiscountAmount = orderDiscountType === 'percent'
+        ? afterLineDiscount * (orderDiscountValue / 100)
+        : Math.min(orderDiscountValue, afterLineDiscount);
+    }
+
+    const netAmount = afterLineDiscount - orderDiscountAmount;
+    const taxAmount = netAmount * (taxRate / 100);
+    const totalAmount = netAmount + taxAmount;
+    const combinedDiscount = totalDiscount + orderDiscountAmount;
 
     const ptsRedeemed = Math.min(Number(redeem_points) || 0, totalAmount);
 
     const result = await db.run(
-      `INSERT INTO sales (receipt_no, customer_id, staff_id, subtotal, tax_amount, discount_amount, total_amount, payment_method, payment_status, notes, session_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [receiptNo, customer_id || null, staff_id, subtotal, taxAmount, totalDiscount, totalAmount,
-       pments && pments.length > 0 ? pments[0].method : 'cash', 'paid', notes || null, session_id_val]
+      `INSERT INTO sales (receipt_no, customer_id, staff_id, subtotal, tax_amount, discount_amount, total_amount, payment_method, payment_status, notes, session_id, order_discount_type, order_discount_value)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [receiptNo, customer_id || null, staff_id, subtotal, taxAmount, combinedDiscount, totalAmount,
+       pments && pments.length > 0 ? pments[0].method : 'cash', 'paid', notes || null, session_id_val,
+       orderDiscountType, orderDiscountValue]
     );
 
     const saleId = result.lastInsertRowid;
@@ -111,7 +126,7 @@ const saleModel = {
         const ptsDiscount = await loyaltyModel.redeemPoints(customer_id, saleId, ptsRedeemed);
         finalTotal = totalAmount - ptsDiscount;
         totalDiscount += ptsDiscount;
-        await db.run('UPDATE sales SET discount_amount = ?, total_amount = ? WHERE id = ?', [totalDiscount, finalTotal, saleId]);
+        await db.run('UPDATE sales SET discount_amount = ?, total_amount = ? WHERE id = ?', [combinedDiscount, finalTotal, saleId]);
       } catch (e) { /* skip points redemption on error */ }
     }
 

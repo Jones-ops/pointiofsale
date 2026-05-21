@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TrashIcon, MinusIcon, PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 
-export default function Cart({ items, onUpdateQty, onUpdatePrice, onUpdateDiscount, onRemove, onClear }) {
+export default function Cart({ items, onUpdateQty, onUpdatePrice, onUpdateDiscount, onRemove, onClear, orderDiscount, onOrderDiscountChange }) {
   const [editIdx, setEditIdx] = useState(null);
   const [editField, setEditField] = useState(null);
   const [editVal, setEditVal] = useState('');
@@ -21,8 +21,17 @@ export default function Cart({ items, onUpdateQty, onUpdatePrice, onUpdateDiscou
   };
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const totalDiscount = items.reduce((s, i) => s + (i.discount || 0), 0);
-  const total = subtotal - totalDiscount;
+  const totalLineDiscount = items.reduce((s, i) => s + (i.discount || 0), 0);
+
+  let orderDiscountAmount = 0;
+  if (orderDiscount && Number(orderDiscount.value) > 0) {
+    const afterLineDisc = subtotal - totalLineDiscount;
+    orderDiscountAmount = orderDiscount.type === 'percent'
+      ? afterLineDisc * (Number(orderDiscount.value) / 100)
+      : Math.min(Number(orderDiscount.value), afterLineDisc);
+  }
+
+  const total = subtotal - totalLineDiscount - orderDiscountAmount;
 
   return (
     <div className="w-96 bg-white border-l flex flex-col">
@@ -108,21 +117,50 @@ export default function Cart({ items, onUpdateQty, onUpdatePrice, onUpdateDiscou
           );
         })}
       </div>
-      <div className="p-3 border-t">
+      <div className="p-3 border-t space-y-1">
         <div className="flex justify-between text-sm">
           <span>Subtotal</span>
           <span>{new Intl.NumberFormat().format(subtotal)}</span>
         </div>
-        {totalDiscount > 0 && (
+        {totalLineDiscount > 0 && (
           <div className="flex justify-between text-sm text-red-500">
-            <span>Discount</span>
-            <span>-{new Intl.NumberFormat().format(totalDiscount)}</span>
+            <span>Line Discount</span>
+            <span>-{new Intl.NumberFormat().format(totalLineDiscount)}</span>
+          </div>
+        )}
+        {orderDiscountAmount > 0 && (
+          <div className="flex justify-between text-sm text-red-500">
+            <span>Order Disc{orderDiscount.type === 'percent' ? ` (${Number(orderDiscount.value).toFixed(0)}%)` : ''}</span>
+            <span>-{new Intl.NumberFormat().format(orderDiscountAmount)}</span>
           </div>
         )}
         <div className="flex justify-between text-lg font-bold mt-1">
           <span>Total</span>
           <span>{new Intl.NumberFormat().format(total)}</span>
         </div>
+        {onOrderDiscountChange && items.length > 0 && (
+          <div className="pt-2 border-t mt-2">
+            <label className="text-xs font-medium text-gray-600">Order Discount</label>
+            <div className="flex gap-2 mt-1">
+              <select
+                value={orderDiscount?.type || 'percent'}
+                onChange={(e) => onOrderDiscountChange({ ...(orderDiscount || { value: 0 }), type: e.target.value })}
+                className="text-xs px-2 py-1 border rounded"
+              >
+                <option value="percent">%</option>
+                <option value="fixed">Fixed</option>
+              </select>
+              <input
+                type="number"
+                value={orderDiscount?.value || ''}
+                onChange={(e) => onOrderDiscountChange({ type: orderDiscount?.type || 'percent', value: Number(e.target.value) || 0 })}
+                placeholder="0"
+                className="flex-1 text-xs px-2 py-1 border rounded"
+                min="0"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

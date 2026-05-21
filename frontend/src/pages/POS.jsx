@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import ProductGrid from '../components/pos/ProductGrid';
 import Cart from '../components/pos/Cart';
@@ -20,6 +20,7 @@ export default function POS() {
   const [showPayment, setShowPayment] = useState(false);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [orderDiscount, setOrderDiscount] = useState({ type: 'percent', value: 0 });
 
   // Session state
   const [session, setSession] = useState(null);
@@ -34,6 +35,10 @@ export default function POS() {
   const [returnReceiptNo, setReturnReceiptNo] = useState('');
   const [returnSale, setReturnSale] = useState(null);
   const [showReturn, setShowReturn] = useState(false);
+
+  // Barcode scanner
+  const [barcode, setBarcode] = useState('');
+  const barcodeRef = useRef(null);
 
   useEffect(() => {
     api.get('/categories').then((r) => setCategories(r.data)).catch(() => {});
@@ -93,7 +98,6 @@ export default function POS() {
       setReturnSale(data);
       setShowReturn(true);
     } catch (e) {
-      // Try searching by receipt number
       try {
         const { data } = await api.get(`/sales/${returnReceiptNo}`);
         if (data.parent_sale_id) {
@@ -108,7 +112,7 @@ export default function POS() {
     }
   };
 
-  const addToCart = (product) => {
+  const addToCart = useCallback((product) => {
     if (!session) return;
     setCart((prev) => {
       const existing = prev.findIndex((i) => i.id === product.id);
@@ -119,6 +123,20 @@ export default function POS() {
       }
       return [...prev, { ...product, quantity: 1, price: product.effective_price || product.selling_price }];
     });
+  }, [session]);
+
+  const handleBarcode = async () => {
+    const code = barcode.trim();
+    if (!code) return;
+    try {
+      const { data } = await api.get(`/products/barcode/${encodeURIComponent(code)}`);
+      addToCart(data);
+      setBarcode('');
+      barcodeRef.current?.focus();
+    } catch (e) {
+      alert('Product not found for barcode: ' + code);
+      setBarcode('');
+    }
   };
 
   const updateQty = (idx, qty) => {
@@ -149,8 +167,16 @@ export default function POS() {
   const removeItem = (idx) => setCart((prev) => prev.filter((_, i) => i !== idx));
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-  const totalDiscount = cart.reduce((s, i) => s + (i.discount || 0), 0);
-  const total = subtotal - totalDiscount;
+  const totalLineDiscount = cart.reduce((s, i) => s + (i.discount || 0), 0);
+
+  let orderDiscountAmount = 0;
+  if (orderDiscount && Number(orderDiscount.value) > 0) {
+    const afterLineDisc = subtotal - totalLineDiscount;
+    orderDiscountAmount = orderDiscount.type === 'percent'
+      ? afterLineDisc * (Number(orderDiscount.value) / 100)
+      : Math.min(Number(orderDiscount.value), afterLineDisc);
+  }
+  const total = subtotal - totalLineDiscount - orderDiscountAmount;
 
   const getCustomerId = async () => {
     if (customer?.id) return customer.id;
@@ -168,11 +194,12 @@ export default function POS() {
       const customer_id = await getCustomerId();
       const { data } = await api.post('/sales', {
         items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity, discount: i.discount || 0 })),
-        payments: [{ method: payment.method, amount: payment.amount }],
+        payments: payment.payments,
         customer_id,
         notes: note || null,
         session_id: session?.id || null,
         redeem_points: payment.redeemPoints || 0,
+        order_discount: Number(orderDiscount.value) > 0 ? orderDiscount : undefined,
       });
       const pdfRes = await api.get(`/sales/${data.id}/receipt`, { responseType: 'blob' });
       const blobUrl = URL.createObjectURL(pdfRes.data);
@@ -181,6 +208,7 @@ export default function POS() {
       setCustomer(null);
       setWalkInName('');
       setNote('');
+      setOrderDiscount({ type: 'percent', value: 0 });
       setShowPayment(false);
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to complete sale');
@@ -242,6 +270,15 @@ export default function POS() {
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex items-center gap-3 mb-3">
               <Select value={categoryFilter} onChange={setCategoryFilter} options={catOptions} className="w-48" />
+              <input
+                ref={barcodeRef}
+                type="text"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleBarcode(); }}
+                placeholder="Scan barcode..."
+                className="w-44 px-3 py-1.5 border rounded-lg text-sm"
+              />
               <span className="text-sm text-gray-500">{cart.length} item(s) in cart | Total: {new Intl.NumberFormat().format(total)}</span>
               <div className="flex-1" />
               <button
@@ -262,7 +299,9 @@ export default function POS() {
             onUpdatePrice={updatePrice}
             onUpdateDiscount={updateDiscount}
             onRemove={removeItem}
-            onClear={() => setCart([])}
+            onClear={() => { setCart([]); setOrderDiscount({ type: 'percent', value: 0 }); }}
+            orderDiscount={orderDiscount}
+            onOrderDiscountChange={setOrderDiscount}
           />
         </div>
       )}
