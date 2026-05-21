@@ -218,18 +218,18 @@ export default function POS() {
     }
   };
 
-  const catOptions = [{ value: '', label: 'All Categories' }, ...categories.map((c) => ({ value: c.id, label: c.name }))];
+  const catOptions = [{ value: '', label: 'All Categories' }, ...(Array.isArray(categories) ? categories.map((c) => ({ value: c.id, label: c.name })) : [])];
 
   if (sessionLoading) {
     return <div className="flex items-center justify-center h-full text-gray-500">Loading session...</div>;
   }
 
   if (!session) {
-    return <SessionOpen onOpen={openSession} loading={false} />;
+    return <SessionOpen onOpen={openSession} loading={sessionLoading} />;
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 8rem)' }}>
       <SessionBar
         session={session}
         onClose={() => setShowSessionClose(true)}
