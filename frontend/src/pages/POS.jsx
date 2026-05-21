@@ -210,6 +210,7 @@ export default function POS() {
       setNote('');
       setOrderDiscount({ type: 'percent', value: 0 });
       setShowPayment(false);
+      checkSession();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to complete sale');
     } finally {
@@ -228,7 +229,7 @@ export default function POS() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-full">
       <SessionBar
         session={session}
         onClose={() => setShowSessionClose(true)}

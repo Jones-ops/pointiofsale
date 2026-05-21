@@ -14,7 +14,9 @@ exports.get = async (req, res) => {
 
 exports.active = async (req, res) => {
   const session = await sessionModel.findActive();
-  res.json(session || null);
+  if (!session) return res.json(null);
+  const enriched = await sessionModel.findById(session.id);
+  res.json(enriched);
 };
 
 exports.open = async (req, res) => {

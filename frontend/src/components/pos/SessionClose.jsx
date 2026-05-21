@@ -7,7 +7,10 @@ export default function SessionClose({ open, session, onClose, onConfirm, loadin
   const [closingCash, setClosingCash] = useState('');
   const [notes, setNotes] = useState('');
 
-  const expected = Number(session?.expected_cash || 0);
+  const salesTotal = session?.sales?.total || 0;
+  const cashMovesIn = (session?.cash_moves || []).filter(m => m.type === 'in').reduce((s, m) => s + Number(m.amount), 0);
+  const cashMovesOut = (session?.cash_moves || []).filter(m => m.type === 'out').reduce((s, m) => s + Number(m.amount), 0);
+  const expected = Number(session?.opening_cash || 0) + salesTotal + cashMovesIn - cashMovesOut;
 
   const handleConfirm = () => {
     onConfirm(Number(closingCash) || 0, notes);
