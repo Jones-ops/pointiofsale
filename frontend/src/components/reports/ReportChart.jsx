@@ -2,7 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
-export function BarChartWidget({ data, dataKey = 'revenue', xKey = 'date', title, color = '#3B82F6' }) {
+export function BarChartWidget({ data, dataKey = 'total', xKey = 'date', title, color = '#4f46e5' }) {
   if (!data || data.length === 0) return null;
   return (
     <div>

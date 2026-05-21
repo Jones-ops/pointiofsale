@@ -23,11 +23,18 @@ const navItems = [
 export default function Sidebar() {
   const { user } = useAuth();
   return (
-    <aside className="w-60 bg-gray-900 text-white flex flex-col h-screen fixed left-0 top-0">
-      <div className="p-4 border-b border-gray-700">
-        <h1 className="text-lg font-bold">POS System</h1>
+    <aside className="w-60 bg-slate-900 text-white flex flex-col h-screen fixed left-0 top-0 z-40">
+      <div className="p-5 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h18v18H3V3zm4 4h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z" />
+            </svg>
+          </div>
+          <h1 className="text-base font-bold tracking-tight">POS System</h1>
+        </div>
       </div>
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           if (item.adminOnly && user?.role !== 'admin') return null;
           const Icon = item.icon;
@@ -37,17 +44,25 @@ export default function Sidebar() {
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${isActive ? 'bg-primary-600 text-white shadow-sm shadow-primary-700/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`
               }
             >
-              <Icon className="w-5 h-5" />
+              <Icon className="w-5 h-5 shrink-0" />
               {item.label}
             </NavLink>
           );
         })}
       </nav>
-      <div className="p-3 border-t border-gray-700">
-        <div className="text-xs text-gray-400 mb-2">Logged in as <span className="text-white font-medium">{user?.name}</span></div>
+      <div className="p-4 border-t border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-white truncate">{user?.name}</div>
+            <div className="text-xs text-slate-400 capitalize">{user?.role}</div>
+          </div>
+        </div>
       </div>
     </aside>
   );

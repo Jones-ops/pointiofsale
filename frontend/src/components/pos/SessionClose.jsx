@@ -23,8 +23,8 @@ export default function SessionClose({ open, session, onClose, onConfirm, loadin
             <div className="text-xs text-gray-500">Opening Cash</div>
             <div className="text-lg font-bold">{new Intl.NumberFormat().format(Number(session?.opening_cash || 0).toFixed(2))}</div>
           </div>
-          <div className="bg-blue-50 p-3 rounded-lg text-center">
-            <div className="text-xs text-blue-600">Expected Cash</div>
+          <div className="bg-primary-50 p-3 rounded-lg text-center">
+            <div className="text-xs text-primary-600">Expected Cash</div>
             <div className="text-lg font-bold">{new Intl.NumberFormat().format(expected.toFixed(2))}</div>
           </div>
         </div>

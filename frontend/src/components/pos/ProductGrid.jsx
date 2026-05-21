@@ -38,11 +38,11 @@ export default function ProductGrid({ onAddToCart, categoryFilter, customerId })
               key={p.id}
               onClick={() => onAddToCart(p)}
               disabled={p.stock <= 0}
-              className="bg-white border rounded-lg p-3 text-left hover:shadow-md transition-shadow disabled:opacity-40 disabled:cursor-not-allowed"
+              className="bg-white border border-gray-200 rounded-lg p-3 text-left hover:shadow-md hover:border-primary-200 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <div className="text-sm font-medium text-gray-900 truncate">{p.name}</div>
               <div className="text-xs text-gray-500 mt-0.5">{p.sku}</div>
-              <div className="text-sm font-bold text-blue-600 mt-1">
+              <div className="text-sm font-bold text-primary-600 mt-1">
                 {p.effective_price && p.effective_price < p.selling_price ? (
                   <span>
                     <span className="line-through text-gray-400 text-xs mr-1">{new Intl.NumberFormat().format(p.selling_price)}</span>

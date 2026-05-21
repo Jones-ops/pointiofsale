@@ -55,7 +55,7 @@ export default function SetupWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-8">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Welcome to POS System</h1>
@@ -66,7 +66,7 @@ export default function SetupWizard() {
         <div className="flex justify-center gap-1 mb-8">
           {steps.map((s, i) => (
             <div key={i} className="flex items-center">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${i === step ? 'bg-blue-600 text-white' : i < step ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${i === step ? 'bg-primary-600 text-white' : i < step ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
                 {i < step ? '✓' : i + 1}
               </div>
               {i < steps.length - 1 && <div className={`w-8 h-0.5 ${i < step ? 'bg-green-500' : 'bg-gray-200'}`} />}

@@ -68,16 +68,16 @@ export default function Sessions() {
             </div>
 
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="text-xs text-blue-600">Opening Cash</div>
+              <div className="bg-primary-50 p-3 rounded-lg">
+                <div className="text-xs text-primary-600">Opening Cash</div>
                 <div className="text-lg font-bold">{currency(selected.opening_cash)}</div>
               </div>
-              <div className="bg-green-50 p-3 rounded-lg">
-                <div className="text-xs text-green-600">Sales Total</div>
+              <div className="bg-emerald-50 p-3 rounded-lg">
+                <div className="text-xs text-emerald-600">Sales Total</div>
                 <div className="text-lg font-bold">{currency(selected.sales?.total)}</div>
               </div>
-              <div className="bg-purple-50 p-3 rounded-lg">
-                <div className="text-xs text-purple-600">Expected Cash</div>
+              <div className="bg-violet-50 p-3 rounded-lg">
+                <div className="text-xs text-violet-600">Expected Cash</div>
                 <div className="text-lg font-bold">{currency(selected.expected_cash)}</div>
               </div>
               <div className={selected.difference < 0 ? 'bg-red-50 p-3 rounded-lg' : 'bg-green-50 p-3 rounded-lg'}>

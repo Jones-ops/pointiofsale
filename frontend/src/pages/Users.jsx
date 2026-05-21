@@ -17,7 +17,7 @@ export default function Users() {
 
   const load = () => {
     setLoading(true);
-    api.get('/users').then((r) => setUsers(r.data)).catch(() => {}).finally(() => setLoading(false));
+    api.get('/users').then((r) => setUsers(r.data.data)).catch(() => {}).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

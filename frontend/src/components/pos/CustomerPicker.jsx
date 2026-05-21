@@ -21,7 +21,7 @@ export default function CustomerPicker({ value, onChange }) {
       <Combobox value={value} onChange={onChange}>
         <div className="relative">
           <Combobox.Input
-            className="w-full border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             displayValue={(c) => c ? `${c.name}${c.phone ? ` (${c.phone})` : ''}${c.loyalty_points ? ` - ${c.loyalty_points}pts` : ''}` : 'Walk-in Customer'}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search customers..."
@@ -30,9 +30,9 @@ export default function CustomerPicker({ value, onChange }) {
             <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
           </Combobox.Button>
           <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 shadow-lg text-sm">
-            <Combobox.Option value={{ id: null, name: 'Walk-in Customer', is_walk_in: true }} className="cursor-pointer px-3 py-2 hover:bg-blue-50">Walk-in Customer</Combobox.Option>
+            <Combobox.Option value={{ id: null, name: 'Walk-in Customer', is_walk_in: true }} className="cursor-pointer px-3 py-2 hover:bg-primary-50">Walk-in Customer</Combobox.Option>
             {filtered.map((c) => (
-              <Combobox.Option key={c.id} value={c} className="cursor-pointer px-3 py-2 hover:bg-blue-50">
+              <Combobox.Option key={c.id} value={c} className="cursor-pointer px-3 py-2 hover:bg-primary-50">
                 <div className="flex justify-between">
                   <span>{c.name} {c.phone ? `(${c.phone})` : ''}</span>
                   {c.loyalty_points > 0 && <span className="text-xs text-green-600">{c.loyalty_points} pts</span>}

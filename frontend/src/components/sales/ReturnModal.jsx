@@ -42,7 +42,7 @@ export default function ReturnModal({ open, sale, onClose, onComplete }) {
     <Modal open={open} onClose={onClose} title={`Return: ${sale?.receipt_no}`} size="lg">
       <div className="space-y-3">
         <p className="text-sm text-gray-500">Select items and quantities to return</p>
-        {error && <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</div>}
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-lg">{error}</div>}
 
         {items.map((item, idx) => (
           <div key={item.id} className="border rounded-lg p-3">

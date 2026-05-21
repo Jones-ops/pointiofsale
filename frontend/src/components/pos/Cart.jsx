@@ -34,7 +34,7 @@ export default function Cart({ items, onUpdateQty, onUpdatePrice, onUpdateDiscou
   const total = subtotal - totalLineDiscount - orderDiscountAmount;
 
   return (
-    <div className="w-96 bg-white border-l flex flex-col">
+    <div className="w-96 bg-white border-l border-gray-200 flex flex-col shadow-sm">
       <div className="p-3 border-b flex justify-between items-center">
         <h3 className="font-semibold">Cart ({items.length})</h3>
         {items.length > 0 && (
@@ -108,7 +108,7 @@ export default function Cart({ items, onUpdateQty, onUpdatePrice, onUpdateDiscou
                     placeholder="Discount amount"
                     onBlur={saveEdit} onKeyDown={(e) => e.key === 'Enter' && saveEdit()} />
                 ) : (
-                  <button onClick={() => startEdit(idx, 'discount', item.discount || 0)} className="text-xs text-blue-500 hover:text-blue-700">
+                  <button onClick={() => startEdit(idx, 'discount', item.discount || 0)} className="text-xs text-primary-500 hover:text-primary-700">
                     {item.discount > 0 ? `Disc: ${new Intl.NumberFormat().format(item.discount)}` : '+ Discount'}
                   </button>
                 )}

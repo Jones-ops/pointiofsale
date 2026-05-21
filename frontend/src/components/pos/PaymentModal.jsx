@@ -126,7 +126,7 @@ export default function PaymentModal({ open, onClose, total, customerId, onCompl
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-700">Payments</label>
-            <button onClick={addPayment} className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+            <button onClick={addPayment} className="text-xs text-primary-600 hover:text-primary-800 flex items-center gap-1">
               <PlusIcon className="w-3 h-3" /> Add payment
             </button>
           </div>

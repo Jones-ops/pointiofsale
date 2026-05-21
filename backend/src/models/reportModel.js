@@ -8,10 +8,10 @@ const reportModel = {
     if (to) { dateFilter += ' AND s.created_at <= ?'; params.push(to); }
 
     const totalSales = await db.one(
-      `SELECT COALESCE(SUM(total_amount),0) as total FROM sales WHERE payment_status != 'voided' ${dateFilter}`, params
+      `SELECT COALESCE(SUM(total_amount),0) as total FROM sales s WHERE s.payment_status != 'voided' ${dateFilter}`, params
     );
     const totalTransactions = await db.one(
-      `SELECT COUNT(*) as c FROM sales WHERE payment_status != 'voided' ${dateFilter}`, params
+      `SELECT COUNT(*) as c FROM sales s WHERE s.payment_status != 'voided' ${dateFilter}`, params
     );
     const totalExpenses = await db.one(
       `SELECT COALESCE(SUM(amount),0) as total FROM expenses WHERE 1=1 ${from ? ' AND expense_date >= ?' : ''} ${to ? ' AND expense_date <= ?' : ''}`,

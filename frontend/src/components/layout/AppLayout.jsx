@@ -33,7 +33,7 @@ export default function AppLayout() {
   const title = Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] || 'POS System';
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 ml-60 flex flex-col">
         <Header title={title} />

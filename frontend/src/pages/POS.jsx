@@ -252,7 +252,7 @@ export default function POS() {
             <div className="flex gap-3">
               <button
                 onClick={loadReturnSale}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
               >
                 Find Receipt
               </button>
@@ -329,7 +329,7 @@ export default function POS() {
         <button
           onClick={() => setShowPayment(true)}
           disabled={cart.length === 0 || saving || returnMode}
-          className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-8 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           {saving ? 'Processing...' : `Charge ${new Intl.NumberFormat().format(total)}`}
         </button>
