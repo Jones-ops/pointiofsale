@@ -1,6 +1,6 @@
 node_modules/
-data/
-uploads/logo/
+**/data/
+**/uploads/logo/
 .env
 dist/
 .DS_Store

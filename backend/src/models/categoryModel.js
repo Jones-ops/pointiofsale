@@ -1,27 +1,32 @@
 const db = require('../config/database');
 
 const categoryModel = {
-  findAll() {
-    return db.all('SELECT * FROM categories ORDER BY name');
+  async findAll() {
+    return db.all('SELECT * FROM categories ORDER BY name ASC');
   },
 
-  findById(id) {
+  async findById(id) {
     return db.one('SELECT * FROM categories WHERE id = ?', [id]);
   },
 
-  create({ name, description }) {
-    const result = db.run('INSERT INTO categories (name, description) VALUES (?, ?)', [name, description || null]);
+  async create(data) {
+    const result = await db.run('INSERT INTO categories (name, description) VALUES (?, ?)', [data.name, data.description || null]);
     return categoryModel.findById(result.lastInsertRowid);
   },
 
-  update(id, { name, description }) {
-    if (name !== undefined) db.run('UPDATE categories SET name = ? WHERE id = ?', [name, id]);
-    if (description !== undefined) db.run('UPDATE categories SET description = ? WHERE id = ?', [description, id]);
+  async update(id, data) {
+    const fields = {};
+    for (const k of ['name', 'description']) {
+      if (data[k] !== undefined) fields[k] = data[k];
+    }
+    if (Object.keys(fields).length === 0) return categoryModel.findById(id);
+    const sets = Object.keys(fields).map(k => `${k} = ?`).join(', ');
+    await db.run(`UPDATE categories SET ${sets} WHERE id = ?`, [...Object.values(fields), id]);
     return categoryModel.findById(id);
   },
 
-  remove(id) {
-    db.run('DELETE FROM categories WHERE id = ?', [id]);
+  async remove(id) {
+    await db.run('DELETE FROM categories WHERE id = ?', [id]);
   },
 };
 

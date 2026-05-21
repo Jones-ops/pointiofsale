@@ -5,73 +5,65 @@ const settingsModel = require('../models/settingsModel');
 const path = require('path');
 const fs = require('fs');
 
-exports.list = (req, res) => {
+exports.list = async (req, res) => {
   const { page, limit, from, to, customer_id, staff_id } = req.query;
-  const sales = saleModel.findAll({
+  const sales = await saleModel.findAll({
     page: Number(page) || 1, limit: Number(limit) || 50,
     from, to, customer_id: Number(customer_id) || undefined,
     staff_id: Number(staff_id) || undefined,
   });
-  const total = saleModel.count({ from, to, customer_id: Number(customer_id) || undefined, staff_id: Number(staff_id) || undefined });
+  const total = await saleModel.count({ from, to, customer_id: Number(customer_id) || undefined, staff_id: Number(staff_id) || undefined });
   res.json({ data: sales, total, page: Number(page) || 1 });
 };
 
-exports.get = (req, res) => {
-  const sale = saleModel.findById(Number(req.params.id));
+exports.get = async (req, res) => {
+  const sale = await saleModel.findById(Number(req.params.id));
   if (!sale) return res.status(404).json({ error: 'Sale not found' });
   res.json(sale);
 };
 
-exports.eligibleReturnItems = (req, res) => {
-  const sale = saleModel.findById(Number(req.params.id));
+exports.eligibleReturnItems = async (req, res) => {
+  const sale = await saleModel.findById(Number(req.params.id));
   if (!sale) return res.status(404).json({ error: 'Sale not found' });
   if (sale.payment_status === 'voided') return res.status(400).json({ error: 'Sale is voided' });
   res.json({ items: sale.items });
 };
 
-exports.returnItems = (req, res) => {
+exports.returnItems = async (req, res) => {
   try {
     const { items } = req.body;
     if (!items || !items.length) return res.status(400).json({ error: 'Items are required' });
     items.forEach(i => { i.staff_id = req.user.id; });
-    const returnSale = saleModel.returnItems(Number(req.params.id), items);
+    const returnSale = await saleModel.returnItems(Number(req.params.id), items);
     res.status(201).json(returnSale);
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 };
 
-exports.create = (req, res) => {
-  try {
-    const session_id = req.body.session_id || (sessionModel.findActive() || {}).id || null;
-    const sale = saleModel.create({
-      customer_id: req.body.customer_id,
-      staff_id: req.user.id,
-      items: req.body.items,
-      payments: req.body.payments,
-      notes: req.body.notes,
-      session_id,
-      redeem_points: req.body.redeem_points,
-    });
-    res.status(201).json(sale);
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+exports.create = async (req, res) => {
+  const session_id = req.body.session_id || (await sessionModel.findActive() || {}).id || null;
+  const sale = await saleModel.create({
+    customer_id: req.body.customer_id,
+    staff_id: req.user.id,
+    items: req.body.items,
+    payments: req.body.payments,
+    notes: req.body.notes,
+    session_id,
+    redeem_points: req.body.redeem_points,
+  });
+  res.status(201).json(sale);
 };
 
-exports.voidSale = (req, res) => {
-  try {
-    const sale = saleModel.voidSale(Number(req.params.id));
-    res.json(sale);
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+exports.voidSale = async (req, res) => {
+  const sale = await saleModel.voidSale(Number(req.params.id));
+  res.json(sale);
 };
 
-exports.receipt = (req, res) => {
-  const sale = saleModel.findById(Number(req.params.id));
+exports.receipt = async (req, res) => {
+  const sale = await saleModel.findById(Number(req.params.id));
   if (!sale) return res.status(404).json({ error: 'Sale not found' });
-  const settings = settingsModel.get();
+  const settings = await settingsModel.get();
 
   const PAGE_W = 226.8;
   const MARGIN = 10;
@@ -96,9 +88,7 @@ exports.receipt = (req, res) => {
     doc.moveDown(0.3);
   };
 
-  // ---- HEADER ----
   let yPos = 10;
-  // Logo
   if (settings.logo_path) {
     const logoFile = path.join(__dirname, '..', '..', settings.logo_path);
     if (fs.existsSync(logoFile)) {
@@ -122,12 +112,10 @@ exports.receipt = (req, res) => {
 
   divider();
 
-  // ---- TITLE ----
   doc.fontSize(10).font('Helvetica-Bold');
   center(sale.parent_sale_id ? 'RETURN / CREDIT NOTE' : 'SALES RECEIPT');
   doc.moveDown(0.5);
 
-  // ---- INFO ----
   doc.fontSize(7.5).font('Helvetica');
   const infoLeft = MARGIN;
   doc.text(`Receipt #: ${sale.receipt_no}`, infoLeft, doc.y);
@@ -138,12 +126,10 @@ exports.receipt = (req, res) => {
 
   divider();
 
-  // ---- TABLE HEADERS ----
   const colItem = MARGIN;
   const colQty = USABLE - 110;
   const colPrice = USABLE - 65;
   const colTotal = USABLE - 20;
-  const colRight = USABLE;
 
   doc.fontSize(7.5).font('Helvetica-Bold');
   doc.y = doc.y + 2;
@@ -153,7 +139,6 @@ exports.receipt = (req, res) => {
   doc.text('Total', colTotal, doc.y, { width: 50, align: 'right' });
   doc.moveDown(0.5);
 
-  // ---- TABLE ROWS ----
   doc.fontSize(7).font('Helvetica');
   for (const item of sale.items) {
     doc.y = doc.y + 0.5;
@@ -166,7 +151,6 @@ exports.receipt = (req, res) => {
 
   divider();
 
-  // ---- SUMMARY ----
   const labelX = colItem;
   const valX = colTotal;
   doc.fontSize(8);
@@ -202,7 +186,6 @@ exports.receipt = (req, res) => {
     doc.text(`Notes: ${sale.notes}`, labelX, doc.y);
   }
 
-  // ---- FOOTER ----
   doc.moveDown(1);
   divider();
   doc.fontSize(7.5).font('Helvetica');

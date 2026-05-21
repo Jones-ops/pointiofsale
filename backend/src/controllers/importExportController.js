@@ -1,101 +1,61 @@
+const productModel = require('../models/productModel');
+const customerModel = require('../models/customerModel');
 const db = require('../config/database');
 
-exports.exportProducts = (req, res) => {
-  const products = db.all('SELECT * FROM products ORDER BY id');
-  res.setHeader('Content-Disposition', 'attachment; filename=products-export.json');
+exports.exportProducts = async (req, res) => {
+  const products = await productModel.findAll({ active: undefined, limit: 10000 });
   res.json(products);
 };
 
-exports.exportCustomers = (req, res) => {
-  const customers = db.all('SELECT * FROM customers ORDER BY id');
-  res.setHeader('Content-Disposition', 'attachment; filename=customers-export.json');
+exports.exportCustomers = async (req, res) => {
+  const customers = await customerModel.findAll({ limit: 10000 });
   res.json(customers);
 };
 
-exports.importProducts = (req, res) => {
+exports.importProducts = async (req, res) => {
   const { items, overwrite } = req.body;
-  if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'items array required' });
+  if (!Array.isArray(items)) return res.status(400).json({ error: 'items must be an array' });
 
   let imported = 0, updated = 0, errors = [];
-
-  db.run('BEGIN');
-  try {
-    for (const item of items) {
-      try {
-        if (!item.sku || !item.name) {
-          errors.push({ sku: item.sku || '(no sku)', error: 'SKU and name required' });
-          continue;
-        }
-        const existing = db.one('SELECT id FROM products WHERE sku = ?', [item.sku]);
-        if (existing) {
-          if (overwrite) {
-            db.run(`UPDATE products SET name=?, description=?, category_id=?, cost_price=?, selling_price=?, unit=?, stock=?, reorder_level=?, barcode=?, active=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
-              [item.name, item.description || null, item.category_id || null, item.cost_price || 0,
-               item.selling_price || 0, item.unit || 'pcs', item.stock || 0, item.reorder_level || 0,
-               item.barcode || null, item.active !== undefined ? item.active : 1, existing.id]);
-            updated++;
-          } else {
-            errors.push({ sku: item.sku, error: 'Already exists (use overwrite option to update)' });
-          }
-        } else {
-          db.run(`INSERT INTO products (sku, name, description, category_id, cost_price, selling_price, unit, stock, reorder_level, barcode, active) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-            [item.sku, item.name, item.description || null, item.category_id || null, item.cost_price || 0,
-             item.selling_price || 0, item.unit || 'pcs', item.stock || 0, item.reorder_level || 0,
-             item.barcode || null, item.active !== undefined ? item.active : 1]);
-          imported++;
-        }
-      } catch (e) {
-        errors.push({ sku: item.sku || '(no sku)', error: e.message });
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (!item.sku || !item.name) { errors.push({ row: i, error: 'Missing sku or name' }); continue; }
+    try {
+      const existing = await db.one('SELECT id FROM products WHERE sku = ?', [item.sku]);
+      if (existing) {
+        if (overwrite) await productModel.update(existing.id, item);
+        updated++;
+      } else {
+        await productModel.create(item);
+        imported++;
       }
+    } catch (e) {
+      errors.push({ row: i, error: e.message });
     }
-    db.run('COMMIT');
-  } catch (e) {
-    db.run('ROLLBACK');
-    return res.status(500).json({ error: 'Import failed: ' + e.message });
   }
-
-  res.json({ imported, updated, errors: errors.length > 0 ? errors : undefined });
+  res.json({ imported, updated, errors: errors.length ? errors : undefined });
 };
 
-exports.importCustomers = (req, res) => {
+exports.importCustomers = async (req, res) => {
   const { items, overwrite } = req.body;
-  if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'items array required' });
+  if (!Array.isArray(items)) return res.status(400).json({ error: 'items must be an array' });
 
   let imported = 0, updated = 0, errors = [];
-
-  db.run('BEGIN');
-  try {
-    for (const item of items) {
-      try {
-        if (!item.name) {
-          errors.push({ name: item.name || '(no name)', error: 'Name required' });
-          continue;
-        }
-        const existing = db.one('SELECT id FROM customers WHERE email = ? AND email IS NOT NULL AND email != ?', [item.email || '', '']);
-        if (existing) {
-          if (overwrite) {
-            db.run(`UPDATE customers SET name=?, phone=?, address=?, is_walk_in=?, credit_limit=?, notes=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
-              [item.name, item.phone || null, item.address || null, item.is_walk_in ? 1 : 0,
-               item.credit_limit || 0, item.notes || null, existing.id]);
-            updated++;
-          } else {
-            errors.push({ name: item.name, error: 'Already exists (use overwrite option to update)' });
-          }
-        } else {
-          db.run(`INSERT INTO customers (name, email, phone, address, is_walk_in, credit_limit, notes) VALUES (?,?,?,?,?,?,?)`,
-            [item.name, item.email || null, item.phone || null, item.address || null,
-             item.is_walk_in ? 1 : 0, item.credit_limit || 0, item.notes || null]);
-          imported++;
-        }
-      } catch (e) {
-        errors.push({ name: item.name || '(no name)', error: e.message });
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (!item.name) { errors.push({ row: i, error: 'Missing name' }); continue; }
+    try {
+      const existing = item.email ? await db.one('SELECT id FROM customers WHERE email = ?', [item.email]) : null;
+      if (existing) {
+        if (overwrite) await customerModel.update(existing.id, item);
+        updated++;
+      } else {
+        await customerModel.create(item);
+        imported++;
       }
+    } catch (e) {
+      errors.push({ row: i, error: e.message });
     }
-    db.run('COMMIT');
-  } catch (e) {
-    db.run('ROLLBACK');
-    return res.status(500).json({ error: 'Import failed: ' + e.message });
   }
-
-  res.json({ imported, updated, errors: errors.length > 0 ? errors : undefined });
+  res.json({ imported, updated, errors: errors.length ? errors : undefined });
 };

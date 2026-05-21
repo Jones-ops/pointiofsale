@@ -1,38 +1,30 @@
-const bcrypt = require('bcryptjs');
 const userModel = require('../models/userModel');
 
-exports.list = (req, res) => {
-  res.json(userModel.findAll());
+exports.list = async (req, res) => {
+  const users = await userModel.findAll();
+  res.json({ data: users });
 };
 
-exports.get = (req, res) => {
-  const user = userModel.findById(Number(req.params.id));
+exports.get = async (req, res) => {
+  const user = await userModel.findById(Number(req.params.id));
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json(user);
 };
 
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
   const { username, password, name, role } = req.body;
   if (!username || !password || !name) return res.status(400).json({ error: 'Username, password, and name required' });
-
-  const existing = userModel.findByUsername(username);
-  if (existing) return res.status(400).json({ error: 'Username already taken' });
-
-  const password_hash = bcrypt.hashSync(password, 10);
-  const user = userModel.create({ username, password_hash, name, role });
+  const user = await userModel.create({ username, password, name, role });
   res.status(201).json(user);
 };
 
-exports.update = (req, res) => {
-  const id = Number(req.params.id);
-  const { password, ...fields } = req.body;
-  if (password) fields.password_hash = bcrypt.hashSync(password, 10);
-  const user = userModel.update(id, fields);
+exports.update = async (req, res) => {
+  const user = await userModel.update(Number(req.params.id), req.body);
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json(user);
 };
 
-exports.remove = (req, res) => {
-  userModel.remove(Number(req.params.id));
+exports.remove = async (req, res) => {
+  await userModel.remove(Number(req.params.id));
   res.json({ message: 'Deleted' });
 };

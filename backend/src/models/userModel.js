@@ -1,44 +1,46 @@
 const db = require('../config/database');
 
 const userModel = {
-  findAll() {
-    return db.all('SELECT id, username, name, role, active, created_at FROM users ORDER BY created_at DESC');
+  async findAll() {
+    return db.all('SELECT id, username, name, role, active, created_at FROM users ORDER BY name ASC');
   },
 
-  findById(id) {
+  async findById(id) {
     return db.one('SELECT id, username, name, role, active, created_at FROM users WHERE id = ?', [id]);
   },
 
-  findByUsername(username) {
+  async findByUsername(username) {
     return db.one('SELECT * FROM users WHERE username = ?', [username]);
   },
 
-  create({ username, password_hash, name, role }) {
-    const result = db.run(
+  async create(data) {
+    const bcrypt = require('bcryptjs');
+    const hash = bcrypt.hashSync(data.password, 10);
+    const result = await db.run(
       'INSERT INTO users (username, password_hash, name, role) VALUES (?, ?, ?, ?)',
-      [username, password_hash, name, role || 'staff']
+      [data.username, hash, data.name, data.role || 'staff']
     );
     return userModel.findById(result.lastInsertRowid);
   },
 
-  update(id, fields) {
-    const sets = [];
-    const vals = [];
-    for (const [k, v] of Object.entries(fields)) {
-      if (v !== undefined && k !== 'id') {
-        sets.push(`${k} = ?`);
-        vals.push(v);
-      }
+  async update(id, data) {
+    const fields = {};
+    for (const k of ['name', 'role', 'active']) {
+      if (data[k] !== undefined) fields[k] = data[k];
     }
-    if (sets.length === 0) return userModel.findById(id);
-    sets.push('updated_at = CURRENT_TIMESTAMP');
-    vals.push(id);
-    db.run(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`, vals);
+    if (data.password) {
+      const bcrypt = require('bcryptjs');
+      fields.password_hash = bcrypt.hashSync(data.password, 10);
+    }
+    if (Object.keys(fields).length === 0) return userModel.findById(id);
+    const sets = Object.keys(fields).map(k => `${k} = ?`).join(', ');
+    const vals = [...Object.values(fields), id];
+    await db.run(`UPDATE users SET ${sets}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, vals);
     return userModel.findById(id);
   },
 
-  remove(id) {
-    db.run('DELETE FROM users WHERE id = ?', [id]);
+  async remove(id) {
+    await db.run('DELETE FROM users WHERE id = ?', [id]);
   },
 };
 
