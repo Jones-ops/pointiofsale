@@ -88,6 +88,7 @@ export default function PaymentModal({ open, onClose, total, customerId, onCompl
     return [base, base + 10, base + 20, base + 50, base + 100].filter(a => a > effectiveTotal);
   };
 
+  const quickAmounts = getQuickAmounts();
   const canComplete = allocated >= effectiveTotal || payments.some(p => Number(p.amount) > 0);
 
   return (

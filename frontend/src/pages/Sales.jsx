@@ -31,7 +31,8 @@ export default function Sales() {
   };
 
   const printReceipt = (id) => {
-    window.open(`/api/sales/${id}/receipt`, '_blank');
+    const token = localStorage.getItem('token');
+    window.open(`/api/sales/${id}/receipt?token=${encodeURIComponent(token)}`, '_blank');
   };
 
   const handleReturn = async () => {

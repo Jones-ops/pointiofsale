@@ -31,7 +31,7 @@ export default function Reports() {
       setCategorySales(c.data);
       setPaymentMethods(p.data);
       setProfitLoss(pl.data);
-      setInventoryValue(iv.data);
+      setInventoryValue(Array.isArray(iv.data) ? iv.data[0] : iv.data);
       setProfitMargins(pm.data);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -60,16 +60,11 @@ export default function Reports() {
         <Card title="Inventory Valuation">
           {inventoryValue && (
             <div>
-              <div className="text-2xl font-bold mb-2">{currency(inventoryValue.total_value)}</div>
-              <div className="text-xs text-gray-500">{inventoryValue.items.length} active products</div>
-              <div className="mt-3 max-h-40 overflow-y-auto space-y-1">
-                {inventoryValue.items.slice(0, 10).map((item) => (
-                  <div key={item.id} className="flex justify-between text-xs">
-                    <span className="truncate">{item.name}</span>
-                    <span>{item.stock} x {currency(item.cost_price)} = {currency(item.value)}</span>
-                  </div>
-                ))}
-              </div>
+              <div className="text-2xl font-bold mb-2">{currency(inventoryValue.total_retail || inventoryValue.total_value)}</div>
+              <div className="text-xs text-gray-500">{inventoryValue.product_count || inventoryValue.items?.length || 0} active products</div>
+              {inventoryValue.low_stock_count > 0 && (
+                <div className="text-xs text-orange-600 mt-1">{inventoryValue.low_stock_count} low stock items</div>
+              )}
             </div>
           )}
         </Card>

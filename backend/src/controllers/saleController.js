@@ -71,7 +71,7 @@ exports.receipt = async (req, res) => {
   const USABLE = PAGE_W - MARGIN * 2;
   const doc = new PDFDocument({ size: [PAGE_W, 1000], margin: MARGIN });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename=receipt-${sale.receipt_no}.pdf`);
+  res.setHeader('Content-Disposition', `inline; filename=receipt-${sale.receipt_no}.pdf`);
   doc.pipe(res);
 
   const center = (text, opts = {}) => {

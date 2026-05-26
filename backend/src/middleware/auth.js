@@ -3,12 +3,17 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'pos-system-secret-key-change-in-production';
 
 function auth(req, res, next) {
+  let token = null;
   const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  if (header && header.startsWith('Bearer ')) {
+    token = header.split(' ')[1];
+  } else if (req.query.token) {
+    token = req.query.token;
+  }
+  if (!token) {
     return res.status(401).json({ error: 'No token provided' });
   }
   try {
-    const token = header.split(' ')[1];
     req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {

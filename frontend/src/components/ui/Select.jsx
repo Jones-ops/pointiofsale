@@ -1,5 +1,4 @@
-import { Fragment } from 'react';
-import { Listbox, Transition } from '@headlessui/react';
+import { Listbox } from '@headlessui/react';
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
 
 export default function Select({ label, value, onChange, options, className = '' }) {
@@ -15,20 +14,18 @@ export default function Select({ label, value, onChange, options, className = ''
               <ChevronUpDownIcon className="h-4 w-4 text-gray-400" />
             </span>
           </Listbox.Button>
-          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-            <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5 text-sm">
-              {options.map((opt) => (
-                <Listbox.Option key={opt.value} value={opt.value} className={({ active }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-900'}`}>
-                  {({ selected }) => (
-                    <>
-                      <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{opt.label}</span>
-                      {selected && <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600"><CheckIcon className="h-4 w-4" /></span>}
-                    </>
-                  )}
-                </Listbox.Option>
-              ))}
-            </Listbox.Options>
-          </Transition>
+          <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5 text-sm transition duration-100 ease-in data-[closed]:opacity-0">
+            {options.map((opt) => (
+              <Listbox.Option key={opt.value} value={opt.value} className={({ focus }) => `relative cursor-pointer select-none py-2 pl-10 pr-4 ${focus ? 'bg-blue-50 text-blue-700' : 'text-gray-900'}`}>
+                {({ selected }) => (
+                  <>
+                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{opt.label}</span>
+                    {selected && <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600"><CheckIcon className="h-4 w-4" /></span>}
+                  </>
+                )}
+              </Listbox.Option>
+            ))}
+          </Listbox.Options>
         </div>
       </Listbox>
     </div>

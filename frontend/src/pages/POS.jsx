@@ -190,6 +190,8 @@ export default function POS() {
 
   const handlePaymentComplete = async (payment) => {
     setSaving(true);
+    const token = localStorage.getItem('token');
+    const receiptWindow = window.open('', '_blank');
     try {
       const customer_id = await getCustomerId();
       const { data } = await api.post('/sales', {
@@ -201,9 +203,7 @@ export default function POS() {
         redeem_points: payment.redeemPoints || 0,
         order_discount: Number(orderDiscount.value) > 0 ? orderDiscount : undefined,
       });
-      const pdfRes = await api.get(`/sales/${data.id}/receipt`, { responseType: 'blob' });
-      const blobUrl = URL.createObjectURL(pdfRes.data);
-      window.open(blobUrl, '_blank');
+      if (receiptWindow) receiptWindow.location.href = `/api/sales/${data.id}/receipt?token=${encodeURIComponent(token)}`;
       setCart([]);
       setCustomer(null);
       setWalkInName('');

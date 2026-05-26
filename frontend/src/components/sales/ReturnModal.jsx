@@ -23,13 +23,13 @@ export default function ReturnModal({ open, sale, onClose, onComplete }) {
     if (!selected.length) { setError('Select at least one item to return'); return; }
     setSaving(true);
     setError('');
+    const token = localStorage.getItem('token');
+    const receiptWindow = window.open('', '_blank');
     try {
       const { data } = await api.post(`/sales/${sale.id}/return`, {
         items: selected.map(i => ({ sale_item_id: i.id, quantity: i.returnQty, reason: i.reason })),
       });
-      const pdfRes = await api.get(`/sales/${data.id}/receipt`, { responseType: 'blob' });
-      const blobUrl = URL.createObjectURL(pdfRes.data);
-      window.open(blobUrl, '_blank');
+      if (receiptWindow) receiptWindow.location.href = `/api/sales/${data.id}/receipt?token=${encodeURIComponent(token)}`;
       onComplete(data);
     } catch (err) {
       setError(err.response?.data?.error || 'Return failed');
